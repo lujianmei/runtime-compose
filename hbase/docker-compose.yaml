@@ -20,7 +20,7 @@ services:
         - ./compose-config
    zookeeper:
       image: flokkr/zookeeper
-      hostname: zookeeper1
+      hostname: zookeeper
       environment:
         ZOO.CFG_clientPort: 2181
         ZOO.CFG_dataDir: /tmp/zookeeper
@@ -59,4 +59,4 @@ services:
 networks:
    default:
       external:
-         name: hbase
+         name: bigdata

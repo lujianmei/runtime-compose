@@ -1,0 +1,259 @@
+version: "3"
+services:
+   namenode1:
+      image: flokkr/hadoop:${VERSION}
+      hostname: namenode1
+      command: ["hdfs", "namenode"]
+      ports:
+         - 9870:9870
+      env_file:
+        - ./hdfs-config
+      environment:
+          ENSURE_NAMENODE_DIR: "/tmp/hadoop-hadoop/dfs/name"
+          SLEEP_SECONDS: 20
+   namenode2:
+      image: flokkr/hadoop:${VERSION}
+      hostname: namenode2
+      command: ["hdfs", "namenode"]
+      ports:
+         - 9871:9870
+      env_file:
+        - ./hdfs-config
+      environment:
+          ENSURE_STANDBY_NAMENODE_DIR: "/tmp/hadoop-hadoop/dfs/name"
+          SLEEP_SECONDS: 40
+   namenode3:
+      image: flokkr/hadoop:${VERSION}
+      hostname: namenode2
+      command: ["hdfs", "namenode"]
+      ports:
+         - 9872:9870
+      env_file:
+        - ./hdfs-config
+      environment:
+          ENSURE_STANDBY_NAMENODE_DIR: "/tmp/hadoop-hadoop/dfs/name"
+          SLEEP_SECONDS: 40
+   journal1:
+      image: flokkr/hadoop:${VERSION}
+      hostname: journal1
+      env_file:
+        - ./hdfs-config
+      command: ["hdfs", "journalnode"]
+   journal2:
+      image: flokkr/hadoop:${VERSION}
+      hostname: journal2
+      env_file:
+        - ./hdfs-config
+      command: ["hdfs", "journalnode"]
+   journal3:
+      image: flokkr/hadoop:${VERSION}
+      hostname: journal3
+      env_file:
+        - ./hdfs-config
+      command: ["hdfs", "journalnode"]
+   datanode1:
+      image: flokkr/hadoop:${VERSION}
+      command: ["hdfs", "datanode"]
+      hostname: datanode1
+      env_file:
+        - ./hdfs-config
+      environment:
+         SLEEP_SECONDS: 50
+   datanode2:
+      image: flokkr/hadoop:${VERSION}
+      command: ["hdfs", "datanode"]
+      hostname: datanode2
+      env_file:
+        - ./hdfs-config
+      environment:
+         SLEEP_SECONDS: 50
+   datanode3:
+      image: flokkr/hadoop:${VERSION}
+      command: ["hdfs", "datanode"]
+      hostname: datanode3
+      env_file:
+        - ./hdfs-config
+      environment:
+         SLEEP_SECONDS: 50
+   activator:
+      image: flokkr/hadoop:${VERSION}
+      command: ["hdfs", "haadmin", "-transitionToActive", "nn1"]
+      env_file:
+        - ./hdfs-config
+      environment:
+         SLEEP_SECONDS: 60
+   resourcemanager1:
+      image: flokkr/hadoop:${HADOOP_VERSION}
+      hostname: resourcemanager1
+      command: ["yarn", "resourcemanager"]
+      ports:
+         - 8088:8088
+      env_file:
+        - ./yarn-config
+      volumes:
+        - ./testdata:/opt/testdata
+   resourcemanager2:
+      image: flokkr/hadoop:${HADOOP_VERSION}
+      hostname: resourcemanager2
+      command: ["yarn", "resourcemanager"]
+      ports:
+         - 8088:8088
+      env_file:
+        - ./yarn-config
+      volumes:
+        - ./testdata:/opt/testdata
+   nodemanager1:
+      image: flokkr/hadoop:${HADOOP_VERSION}
+      hostname: nodemanager1
+      command: ["yarn","nodemanager"]
+      links:
+         - resourcemanager1
+         - resourcemanager2
+         - namenode1
+         - namenode2
+         - namenode3
+      env_file:
+        - ./yarn-config
+   nodemanager2:
+      image: flokkr/hadoop:${HADOOP_VERSION}
+      hostname: nodemanager2
+      command: ["yarn","nodemanager"]
+      links:
+         - resourcemanager1
+         - resourcemanager2
+         - namenode1
+         - namenode2
+         - namenode3
+      env_file:
+        - ./yarn-config
+   nodemanager3:
+      image: flokkr/hadoop:${HADOOP_VERSION}
+      hostname: nodemanager3
+      command: ["yarn","nodemanager"]
+      links:
+         - resourcemanager1
+         - resourcemanager2
+         - namenode1
+         - namenode2
+         - namenode3
+      env_file:
+        - ./yarn-config
+
+   zookeeper1:
+     image: flokkr/zookeeper:${ZOOKEEPER_VERSION}
+     hostname: zookeeper1
+     env_file:
+        - ./zookeeper-config
+     environment:
+       ZOO.CFG_clientPort: 2181
+       ZOO.CFG_dataDir: /tmp/zookeeper
+   zookeeper2:
+     image: flokkr/zookeeper:${ZOOKEEPER_VERSION}
+     hostname: zookeeper2
+     env_file:
+        - ./zookeeper-config
+     environment:
+       ZOO.CFG_clientPort: 2181
+       ZOO.CFG_dataDir: /tmp/zookeeper
+   zookeeper3:
+     image: flokkr/zookeeper:${ZOOKEEPER_VERSION}
+     hostname: zookeeper3
+     env_file:
+        - ./zookeeper-config
+     environment:
+       ZOO.CFG_clientPort: 2181
+       ZOO.CFG_dataDir: /tmp/zookeeper
+   hbasemaster:
+      domainname: hbase
+      image: flokkr/hbase:$HBASE_VERSION
+      command: ["hbase","master","start"]
+      hostname: hbasemaster
+      ports:
+        - 16010:16010
+      env_file:
+        - ./hbase-config
+      environment:
+        WAITFOR: namenode:9000
+   hbaseregion1:
+      image: flokkr/hbase:$HBASE_VERSION
+      command: ["hbase","regionserver","start"]
+      domainname: hbase
+      hostname: hbaseregion1
+      env_file:
+        - ./hbase-config
+   hbaseregion2:
+      image: flokkr/hbase:$HBASE_VERSION
+      command: ["hbase","regionserver","start"]
+      domainname: hbase
+      hostname: hbaseregion2
+      env_file:
+        - ./hbase-config
+   hbaseregion3:
+      image: flokkr/hbase:$HBASE_VERSION
+      command: ["hbase","regionserver","start"]
+      domainname: hbase
+      hostname: hbaseregion3
+      env_file:
+        - ./hbase-config
+   kafka:
+      hostname: kafka
+      image: flokkr/kafka
+      environment:
+         SERVER.PROPERTIES_zookeeper.connect: zookeeper1:2181
+   kafkapublisher:
+      image: flokkr/kafka
+      command: ["bash","-c","'while sleep 5; do date | ./bin/kafka-console-producer.sh --topic test --broker-list kafka:9092; done'"]
+   kafkasubscriber:
+      image: flokkr/kafka
+      command: ["./bin/kafka-console-consumer.sh --topic test2 --bootstrap-server kafka:9092"]
+   hivemetastore:
+      image: elek/hive-metastore
+      volumes:
+         - "/tmp:/data"
+      network_mode: host
+      environment:
+         CORE-SITE.XML_fs.default.name: "hdfs://localhost:9000"
+         HDFS-SITE.XML_dfs.namenode.rpc-address: "localhost:9000"
+         HDFS-SITE.XML_dfs_datanode_data_dir: /data/datanode
+         HDFS-SITE.XML_dfs.namenode.http-bind-host: 0.0.0.0
+         HIVE-SITE.XML_javax.jdo.option.ConnectionURL: "jdbc:derby:;databaseName=/data/hivemetastore;create=true"
+         HIVE-SITE.XML_hive.metastore.warehouse.dir: /hive
+   hiveserver2:
+      image: elek/hive-hiveserver2
+      volumes:
+         - "/tmp:/data"
+      network_mode: host
+      environment:
+         HADOOP_CONF_DIR: /opt/hive/conf
+         CORE-SITE.XML_fs.default.name: "hdfs://localhost:9000"
+         CORE-SITE.XML_fs.defaultFs: "hdfs://localhost:9000"
+         HDFS-SITE.XML_dfs.namenode.rpc-address: "localhost:9000"
+         HDFS-SITE.XML_dfs_datanode_data_dir: /data/datanode
+         HDFS-SITE.XML_dfs.namenode.http-bind-host: 0.0.0.0
+         HIVE-SITE.XML_hive.metastore.uris: thrift://localhost:9083
+         HIVE-SITE.XML_hive.metastore.warehouse.dir: /hive
+      command: /opt/hive/bin/hiveserver2
+   hue:
+      hostname: hue
+      image: gethue/hue:latest
+      container_name: development_hue
+      dns: 8.8.8.8
+      ports:
+       - "8888:8888"
+      #command: ./build/env/bin/hue runserver_plus 0.0.0.0:8888
+      command: tail -f /dev/null
+      volumes:
+        - ../../../apps/hbase/src:/hue/apps/hbase/src
+        - ./hue.ini:/hue/desktop/conf/hue.ini
+   flume:
+      hostname: flume
+      image: anchorfree/flume:latest
+      container_name: development_hue
+      #volumes:
+      #  - ../../../apps/hbase/src:/hue/apps/hbase/src
+      #  - ./hue.ini:/hue/desktop/conf/hue.ini
+
+networks:
+   default:
+      external:
+         name: bigdata

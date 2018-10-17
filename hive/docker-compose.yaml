@@ -56,3 +56,8 @@ services:
         - 10002:10002
      env_file:
         - ./config
+networks:
+   default:
+      external:
+         name: bigdata
+

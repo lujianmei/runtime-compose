@@ -51,9 +51,26 @@ services:
       env_file:
         - ./config
       command: ["hdfs", "journalnode"]
-   datanode:
+   datanode1:
       image: flokkr/hadoop:${VERSION}
       command: ["hdfs", "datanode"]
+      hostname: datanode1
+      env_file:
+        - ./config
+      environment:
+         SLEEP_SECONDS: 50
+   datanode2:
+      image: flokkr/hadoop:${VERSION}
+      command: ["hdfs", "datanode"]
+      hostname: datanode2
+      env_file:
+        - ./config
+      environment:
+         SLEEP_SECONDS: 50
+   datanode3:
+      image: flokkr/hadoop:${VERSION}
+      command: ["hdfs", "datanode"]
+      hostname: datanode3
       env_file:
         - ./config
       environment:

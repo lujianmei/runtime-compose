@@ -1,1 +1,1 @@
-docker-compose up --scale datanode=3
+docker-compose up --scale datanode=3 kafka=3

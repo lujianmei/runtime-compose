@@ -9,7 +9,7 @@ services:
       env_file:
         - ./my-config
       environment:
-          ENSURE_NAMENODE_DIR: "/tmp/hadoop-hadoop/dfs/name"
+          ENSURE_NAMENODE_DIR: "/data/hadoop-hadoop/dfs/name"
           SLEEP_SECONDS: 20
    namenode2:
       image: flokkr/hadoop:${HADOOP_VERSION}
@@ -20,7 +20,7 @@ services:
       env_file:
         - ./my-config
       environment:
-          ENSURE_STANDBY_NAMENODE_DIR: "/tmp/hadoop-hadoop/dfs/name"
+          ENSURE_STANDBY_NAMENODE_DIR: "/data/hadoop-hadoop/dfs/name"
           SLEEP_SECONDS: 40
    namenode3:
       image: flokkr/hadoop:${HADOOP_VERSION}
@@ -31,7 +31,7 @@ services:
       env_file:
         - ./my-config
       environment:
-          ENSURE_STANDBY_NAMENODE_DIR: "/tmp/hadoop-hadoop/dfs/name"
+          ENSURE_STANDBY_NAMENODE_DIR: "/data/hadoop-hadoop/dfs/name"
           SLEEP_SECONDS: 40
    journal1:
       image: flokkr/hadoop:${HADOOP_VERSION}
@@ -66,19 +66,9 @@ services:
         - ./my-config
       environment:
          SLEEP_SECONDS: 60
-   resourcemanager1:
+   resourcemanager:
       image: flokkr/hadoop:${HADOOP_VERSION}
-      hostname: resourcemanager1
-      command: ["yarn", "resourcemanager"]
-      ports:
-         - 8088:8088
-      env_file:
-        - ./my-config
-      volumes:
-        - ./testdata:/opt/testdata
-   resourcemanager2:
-      image: flokkr/hadoop:${HADOOP_VERSION}
-      hostname: resourcemanager2
+      hostname: resourcemanager
       command: ["yarn", "resourcemanager"]
       ports:
          - 8088:8088
@@ -91,8 +81,7 @@ services:
       hostname: nodemanager1
       command: ["yarn","nodemanager"]
       links:
-         - resourcemanager1
-         - resourcemanager2
+         - resourcemanager
          - namenode1
          - namenode2
          - namenode3
@@ -103,8 +92,7 @@ services:
       hostname: nodemanager2
       command: ["yarn","nodemanager"]
       links:
-         - resourcemanager1
-         - resourcemanager2
+         - resourcemanager
          - namenode1
          - namenode2
          - namenode3
@@ -115,8 +103,7 @@ services:
       hostname: nodemanager3
       command: ["yarn","nodemanager"]
       links:
-         - resourcemanager1
-         - resourcemanager2
+         - resourcemanager
          - namenode1
          - namenode2
          - namenode3
@@ -129,7 +116,7 @@ services:
         - ./zookeeper-config
      environment:
        ZOO.CFG_clientPort: 2181
-       ZOO.CFG_dataDir: /tmp/zookeeper
+       ZOO.CFG_dataDir: /data/zookeeper
    zookeeper2:
      image: flokkr/zookeeper:${ZOOKEEPER_VERSION}
      hostname: zookeeper2
@@ -137,7 +124,7 @@ services:
         - ./zookeeper-config
      environment:
        ZOO.CFG_clientPort: 2181
-       ZOO.CFG_dataDir: /tmp/zookeeper
+       ZOO.CFG_dataDir: /data/zookeeper
    zookeeper3:
      image: flokkr/zookeeper:${ZOOKEEPER_VERSION}
      hostname: zookeeper3
@@ -145,35 +132,7 @@ services:
         - ./zookeeper-config
      environment:
        ZOO.CFG_clientPort: 2181
-       ZOO.CFG_dataDir: /tmp/zookeeper
-   sparkhistory:
-       image: flokkr/spark:${SPARK_VERSION}
-       command: ["/opt/spark/bin/spark-class","org.apache.spark.deploy.history.HistoryServer"]
-       ports:
-         - 18080:18080
-       environment:
-          SLEEP_SECONDS: 30
-       env_file:
-         - ./spark-config
-   sparklogdirinit:
-      image: flokkr/hadoop:${HADOOP_VERSION}
-      volumes:
-         - ./init-hdfs.sh:/usr/bin/init-hdfs.sh
-      command: ["/usr/bin/init-hdfs.sh"]
-      environment:
-         SLEEP_SECONDS: 15
-      env_file:
-        - spark-config
-   kafka:
-      hostname: kafka
-      image: wurstemeister/kafka
-      ports:
-        - "9092"
-      environment:
-        KAFKA_ADVERTISED_HOST_NAME: kafka
-        KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181
-      volumes:
-        - /var/run/docker.sock:/var/run/docker.sock
+       ZOO.CFG_dataDir: /data/zookeeper
    hbasemaster:
       domainname: hbase
       image: flokkr/hbase:$HBASE_VERSION
@@ -182,30 +141,30 @@ services:
       ports:
         - 16010:16010
       env_file:
-        - ./hbase-config
+        - ./my-config
       environment:
-        WAITFOR: namenode:9000
+        WAITFOR: namenode1:9820,namenode2:9802,namenode3:9820
    hbaseregion1:
       image: flokkr/hbase:$HBASE_VERSION
       command: ["hbase","regionserver","start"]
       domainname: hbase
       hostname: hbaseregion1
       env_file:
-        - ./hbase-config
+        - ./my-config
    hbaseregion2:
       image: flokkr/hbase:$HBASE_VERSION
       command: ["hbase","regionserver","start"]
       domainname: hbase
       hostname: hbaseregion2
       env_file:
-        - ./hbase-config
+        - ./my-config
    hbaseregion3:
       image: flokkr/hbase:$HBASE_VERSION
       command: ["hbase","regionserver","start"]
       domainname: hbase
       hostname: hbaseregion3
       env_file:
-        - ./hbase-config
+        - ./my-config
    metastoredb:
       image: postgres
       environment:
@@ -216,7 +175,7 @@ services:
      image: flokkr/hive
      command: ["hive","--service", "metastore"]
      env_file:
-        - ./hive-config
+        - ./my-config
    hiveserver2:
      image: flokkr/hive
      command: ["hive","--service", "hiveserver2"]
@@ -227,7 +186,7 @@ services:
      ports:
         - 10002:10002
      env_file:
-        - ./hive-config
+        - ./my-config
    hue:
       hostname: hue
       image: gethue/hue:latest
@@ -238,15 +197,8 @@ services:
       #command: ./build/env/bin/hue runserver_plus 0.0.0.0:8888
       command: tail -f /dev/null
       volumes:
-        - ../../../apps/hbase/src:/hue/apps/hbase/src
+        # - ../../../apps/hbase/src:/hue/apps/hbase/src
         - ./hue.ini:/hue/desktop/conf/hue.ini
-   flume:
-      hostname: flume
-      image: anchorfree/flume:latest
-      container_name: development_hue
-      #volumes:
-      #  - ../../../apps/hbase/src:/hue/apps/hbase/src
-      #  - ./hue.ini:/hue/desktop/conf/hue.ini
 
 networks:
    default:

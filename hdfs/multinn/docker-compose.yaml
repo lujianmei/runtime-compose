@@ -7,7 +7,7 @@ services:
       ports:
          - 9870:9870
       env_file:
-        - ./config
+        - ./hdfs-config
       environment:
           ENSURE_NAMENODE_DIR: "/tmp/hadoop-hadoop/dfs/name"
           SLEEP_SECONDS: 20
@@ -18,7 +18,7 @@ services:
       ports:
          - 9871:9870
       env_file:
-        - ./config
+        - ./hdfs-config
       environment:
           ENSURE_STANDBY_NAMENODE_DIR: "/tmp/hadoop-hadoop/dfs/name"
           SLEEP_SECONDS: 40
@@ -29,7 +29,7 @@ services:
       ports:
          - 9872:9870
       env_file:
-        - ./config
+        - ./hdfs-config
       environment:
           ENSURE_STANDBY_NAMENODE_DIR: "/tmp/hadoop-hadoop/dfs/name"
           SLEEP_SECONDS: 40
@@ -37,26 +37,26 @@ services:
       image: flokkr/hadoop:${VERSION}
       hostname: journal1
       env_file:
-        - ./config
+        - ./hdfs-config
       command: ["hdfs", "journalnode"]
    journal2:
       image: flokkr/hadoop:${VERSION}
       hostname: journal2
       env_file:
-        - ./config
+        - ./hdfs-config
       command: ["hdfs", "journalnode"]
    journal3:
       image: flokkr/hadoop:${VERSION}
       hostname: journal3
       env_file:
-        - ./config
+        - ./hdfs-config
       command: ["hdfs", "journalnode"]
    datanode1:
       image: flokkr/hadoop:${VERSION}
       command: ["hdfs", "datanode"]
       hostname: datanode1
       env_file:
-        - ./config
+        - ./hdfs-config
       environment:
          SLEEP_SECONDS: 50
    datanode2:
@@ -64,7 +64,7 @@ services:
       command: ["hdfs", "datanode"]
       hostname: datanode2
       env_file:
-        - ./config
+        - ./hdfs-config
       environment:
          SLEEP_SECONDS: 50
    datanode3:
@@ -72,13 +72,13 @@ services:
       command: ["hdfs", "datanode"]
       hostname: datanode3
       env_file:
-        - ./config
+        - ./hdfs-config
       environment:
          SLEEP_SECONDS: 50
    activator:
       image: flokkr/hadoop:${VERSION}
       command: ["hdfs", "haadmin", "-transitionToActive", "nn1"]
       env_file:
-        - ./config
+        - ./hdfs-config
       environment:
          SLEEP_SECONDS: 60

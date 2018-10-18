@@ -7,9 +7,9 @@ services:
       ports:
          - 9870:9870
       env_file:
-        - ./my-config
+        - ./hdfs-config
       environment:
-          ENSURE_NAMENODE_DIR: "/data/hadoop-hadoop/dfs/name"
+          ENSURE_NAMENODE_DIR: "/tmp/hadoop-hadoop/dfs/name"
           SLEEP_SECONDS: 20
    namenode2:
       image: flokkr/hadoop:${HADOOP_VERSION}
@@ -18,9 +18,9 @@ services:
       ports:
          - 9871:9870
       env_file:
-        - ./my-config
+        - ./hdfs-config
       environment:
-          ENSURE_STANDBY_NAMENODE_DIR: "/data/hadoop-hadoop/dfs/name"
+          ENSURE_STANDBY_NAMENODE_DIR: "/tmp/hadoop-hadoop/dfs/name"
           SLEEP_SECONDS: 40
    namenode3:
       image: flokkr/hadoop:${HADOOP_VERSION}
@@ -29,178 +29,194 @@ services:
       ports:
          - 9872:9870
       env_file:
-        - ./my-config
+        - ./hdfs-config
       environment:
-          ENSURE_STANDBY_NAMENODE_DIR: "/data/hadoop-hadoop/dfs/name"
+          ENSURE_STANDBY_NAMENODE_DIR: "/tmp/hadoop-hadoop/dfs/name"
           SLEEP_SECONDS: 40
    journal1:
       image: flokkr/hadoop:${HADOOP_VERSION}
       hostname: journal1
       env_file:
-        - ./my-config
+        - ./hdfs-config
       command: ["hdfs", "journalnode"]
    journal2:
       image: flokkr/hadoop:${HADOOP_VERSION}
       hostname: journal2
       env_file:
-        - ./my-config
+        - ./hdfs-config
       command: ["hdfs", "journalnode"]
    journal3:
       image: flokkr/hadoop:${HADOOP_VERSION}
       hostname: journal3
       env_file:
-        - ./my-config
+        - ./hdfs-config
       command: ["hdfs", "journalnode"]
-   datanode:
+   datanode1:
       image: flokkr/hadoop:${HADOOP_VERSION}
       command: ["hdfs", "datanode"]
-      hostname: datanode
+      hostname: datanode1
       env_file:
-        - ./my-config
+        - ./hdfs-config
+      environment:
+         SLEEP_SECONDS: 50
+   datanode2:
+      image: flokkr/hadoop:${HADOOP_VERSION}
+      command: ["hdfs", "datanode"]
+      hostname: datanode2
+      env_file:
+        - ./hdfs-config
+      environment:
+         SLEEP_SECONDS: 50
+   datanode3:
+      image: flokkr/hadoop:${HADOOP_VERSION}
+      command: ["hdfs", "datanode"]
+      hostname: datanode3
+      env_file:
+        - ./hdfs-config
       environment:
          SLEEP_SECONDS: 50
    activator:
       image: flokkr/hadoop:${HADOOP_VERSION}
       command: ["hdfs", "haadmin", "-transitionToActive", "nn1"]
       env_file:
-        - ./my-config
+        - ./hdfs-config
       environment:
          SLEEP_SECONDS: 60
-   resourcemanager:
-      image: flokkr/hadoop:${HADOOP_VERSION}
-      hostname: resourcemanager
-      command: ["yarn", "resourcemanager"]
-      ports:
-         - 8088:8088
-      env_file:
-        - ./my-config
-      volumes:
-        - ./testdata:/opt/testdata
-   nodemanager1:
-      image: flokkr/hadoop:${HADOOP_VERSION}
-      hostname: nodemanager1
-      command: ["yarn","nodemanager"]
-      links:
-         - resourcemanager
-         - namenode1
-         - namenode2
-         - namenode3
-      env_file:
-        - ./my-config
-   nodemanager2:
-      image: flokkr/hadoop:${HADOOP_VERSION}
-      hostname: nodemanager2
-      command: ["yarn","nodemanager"]
-      links:
-         - resourcemanager
-         - namenode1
-         - namenode2
-         - namenode3
-      env_file:
-        - ./my-config
-   nodemanager3:
-      image: flokkr/hadoop:${HADOOP_VERSION}
-      hostname: nodemanager3
-      command: ["yarn","nodemanager"]
-      links:
-         - resourcemanager
-         - namenode1
-         - namenode2
-         - namenode3
-      env_file:
-        - ./my-config
-   zookeeper1:
-     image: flokkr/zookeeper:${ZOOKEEPER_VERSION}
-     hostname: zookeeper1
-     env_file:
-        - ./zookeeper-config
-     environment:
-       ZOO.CFG_clientPort: 2181
-       ZOO.CFG_dataDir: /data/zookeeper
-   zookeeper2:
-     image: flokkr/zookeeper:${ZOOKEEPER_VERSION}
-     hostname: zookeeper2
-     env_file:
-        - ./zookeeper-config
-     environment:
-       ZOO.CFG_clientPort: 2181
-       ZOO.CFG_dataDir: /data/zookeeper
-   zookeeper3:
-     image: flokkr/zookeeper:${ZOOKEEPER_VERSION}
-     hostname: zookeeper3
-     env_file:
-        - ./zookeeper-config
-     environment:
-       ZOO.CFG_clientPort: 2181
-       ZOO.CFG_dataDir: /data/zookeeper
-   hbasemaster:
-      domainname: hbase
-      image: flokkr/hbase:$HBASE_VERSION
-      command: ["hbase","master","start"]
-      hostname: hbasemaster
-      ports:
-        - 16010:16010
-      env_file:
-        - ./my-config
-      environment:
-        WAITFOR: namenode1:9820,namenode2:9802,namenode3:9820
-   hbaseregion1:
-      image: flokkr/hbase:$HBASE_VERSION
-      command: ["hbase","regionserver","start"]
-      domainname: hbase
-      hostname: hbaseregion1
-      env_file:
-        - ./my-config
-   hbaseregion2:
-      image: flokkr/hbase:$HBASE_VERSION
-      command: ["hbase","regionserver","start"]
-      domainname: hbase
-      hostname: hbaseregion2
-      env_file:
-        - ./my-config
-   hbaseregion3:
-      image: flokkr/hbase:$HBASE_VERSION
-      command: ["hbase","regionserver","start"]
-      domainname: hbase
-      hostname: hbaseregion3
-      env_file:
-        - ./my-config
-   metastoredb:
-      image: postgres
-      environment:
-        POSTGRES_PASSWORD: rootpwd
-        POSTGRES_DB: metastore
-        POSTGRES_USER: hive
-   metastore:
-     image: flokkr/hive
-     command: ["hive","--service", "metastore"]
-     env_file:
-        - ./my-config
-   hiveserver2:
-     image: flokkr/hive
-     command: ["hive","--service", "hiveserver2"]
-     volumes:
-        - ./testdata.sql:/tmp/testdata.sql
-     environment:
-        HADOOP_CONF_DIR: /opt/hive/conf
-     ports:
-        - 10002:10002
-     env_file:
-        - ./my-config
-   hue:
-      hostname: hue
-      image: gethue/hue:latest
-      container_name: development_hue
-      dns: 8.8.8.8
-      ports:
-       - "8888:8888"
-      #command: ./build/env/bin/hue runserver_plus 0.0.0.0:8888
-      command: tail -f /dev/null
-      volumes:
-        # - ../../../apps/hbase/src:/hue/apps/hbase/src
-        - ./hue.ini:/hue/desktop/conf/hue.ini
+   # resourcemanager:
+   #    image: flokkr/hadoop:${HADOOP_VERSION}
+   #    hostname: resourcemanager
+   #    command: ["yarn", "resourcemanager"]
+   #    ports:
+   #       - 8088:8088
+   #    env_file:
+   #      - ./my-config
+   #    volumes:
+   #      - ./testdata:/opt/testdata
+   # nodemanager1:
+   #    image: flokkr/hadoop:${HADOOP_VERSION}
+   #    hostname: nodemanager1
+   #    command: ["yarn","nodemanager"]
+   #    links:
+   #       - resourcemanager
+   #       - namenode1
+   #       - namenode2
+   #       - namenode3
+   #    env_file:
+   #      - ./my-config
+   # nodemanager2:
+   #    image: flokkr/hadoop:${HADOOP_VERSION}
+   #    hostname: nodemanager2
+   #    command: ["yarn","nodemanager"]
+   #    links:
+   #       - resourcemanager
+   #       - namenode1
+   #       - namenode2
+   #       - namenode3
+   #    env_file:
+   #      - ./my-config
+   # nodemanager3:
+   #    image: flokkr/hadoop:${HADOOP_VERSION}
+   #    hostname: nodemanager3
+   #    command: ["yarn","nodemanager"]
+   #    links:
+   #       - resourcemanager
+   #       - namenode1
+   #       - namenode2
+   #       - namenode3
+   #    env_file:
+   #      - ./my-config
+   # zookeeper1:
+   #   image: flokkr/zookeeper:${ZOOKEEPER_VERSION}
+   #   hostname: zookeeper1
+   #   env_file:
+   #      - ./zookeeper-config
+   #   environment:
+   #     ZOO.CFG_clientPort: 2181
+   #     ZOO.CFG_dataDir: /data/zookeeper
+   # zookeeper2:
+   #   image: flokkr/zookeeper:${ZOOKEEPER_VERSION}
+   #   hostname: zookeeper2
+   #   env_file:
+   #      - ./zookeeper-config
+   #   environment:
+   #     ZOO.CFG_clientPort: 2181
+   #     ZOO.CFG_dataDir: /data/zookeeper
+   # zookeeper3:
+   #   image: flokkr/zookeeper:${ZOOKEEPER_VERSION}
+   #   hostname: zookeeper3
+   #   env_file:
+   #      - ./zookeeper-config
+   #   environment:
+   #     ZOO.CFG_clientPort: 2181
+   #     ZOO.CFG_dataDir: /data/zookeeper
+   # hbasemaster:
+   #    domainname: hbase
+   #    image: flokkr/hbase:$HBASE_VERSION
+   #    command: ["hbase","master","start"]
+   #    hostname: hbasemaster
+   #    ports:
+   #      - 16010:16010
+   #    env_file:
+   #      - ./my-config
+   #    environment:
+   #      WAITFOR: namenode1:9820,namenode2:9802,namenode3:9820
+   # hbaseregion1:
+   #    image: flokkr/hbase:$HBASE_VERSION
+   #    command: ["hbase","regionserver","start"]
+   #    domainname: hbase
+   #    hostname: hbaseregion1
+   #    env_file:
+   #      - ./my-config
+   # hbaseregion2:
+   #    image: flokkr/hbase:$HBASE_VERSION
+   #    command: ["hbase","regionserver","start"]
+   #    domainname: hbase
+   #    hostname: hbaseregion2
+   #    env_file:
+   #      - ./my-config
+   # hbaseregion3:
+   #    image: flokkr/hbase:$HBASE_VERSION
+   #    command: ["hbase","regionserver","start"]
+   #    domainname: hbase
+   #    hostname: hbaseregion3
+   #    env_file:
+   #      - ./my-config
+   # metastoredb:
+   #    image: postgres
+   #    environment:
+   #      POSTGRES_PASSWORD: rootpwd
+   #      POSTGRES_DB: metastore
+   #      POSTGRES_USER: hive
+   # metastore:
+   #   image: flokkr/hive
+   #   command: ["hive","--service", "metastore"]
+   #   env_file:
+   #      - ./my-config
+   # hiveserver2:
+   #   image: flokkr/hive
+   #   command: ["hive","--service", "hiveserver2"]
+   #   volumes:
+   #      - ./testdata.sql:/tmp/testdata.sql
+   #   environment:
+   #      HADOOP_CONF_DIR: /opt/hive/conf
+   #   ports:
+   #      - 10002:10002
+   #   env_file:
+   #      - ./my-config
+#    hue:
+#       hostname: hue
+#       image: gethue/hue:latest
+#       container_name: development_hue
+#       dns: 8.8.8.8
+#       ports:
+#        - "8888:8888"
+#       #command: ./build/env/bin/hue runserver_plus 0.0.0.0:8888
+#       command: tail -f /dev/null
+#       volumes:
+#         # - ../../../apps/hbase/src:/hue/apps/hbase/src
+#         - ./hue.ini:/hue/desktop/conf/hue.ini
 
-networks:
-   default:
-      external:
-         name: bigdata
+# networks:
+#    default:
+#       external:
+#          name: bigdata
